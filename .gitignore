@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Ferramentas (opencode local)
+.opencode/node_modules/
+
+# Sistema
+.DS_Store
+Thumbs.db
