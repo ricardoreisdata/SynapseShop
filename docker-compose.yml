@@ -1,0 +1,4 @@
+services:
+  api:
+    build: .
+    container_name: synapseshop-api
