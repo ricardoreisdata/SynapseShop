@@ -106,3 +106,47 @@ O arquivo `postman/SynapseShop.postman_collection.json` contém todos os CRUDs (
 ### Interface administrativa (extra)
 
 O Django Admin fica em `http://localhost:8000/admin/` — útil para inspecionar os dados gerados via API (não faz parte do escopo de autenticação da Aula 4).
+
+## Microsserviço de Estoque — FastAPI (Aula 5)
+
+O serviço `inventory` é um microsserviço complementar em **FastAPI** que gerencia o estoque dos itens. Nesta aula o foco é a camada de API: **modelos Pydantic, tipagem estática, validações e documentação automática** — ainda **sem banco de dados** (Aula 6) e sem autenticação (Aula 7), conforme o SpecDD. O armazenamento é em memória, com itens de demonstração (`NB-01` e `MOUSE-RGB-01`) semeados no startup.
+
+### Rotas mínimas alinhadas
+
+| Método | Rota | Descrição | Status esperado |
+|---|---|---|---|
+| GET | `/health` | Disponibilidade do serviço | 200 OK |
+| GET | `/inventory` | Lista itens do estoque | 200 OK |
+| GET | `/inventory/{sku}` | Consulta item por SKU | 200 OK / 404 |
+| PUT | `/inventory/{sku}` | Registra/atualiza item (upsert) | 200 OK |
+| POST | `/inventory/{sku}/adjust` | Ajusta estoque (delta ≠ 0) | 200 OK / 400 / 404 |
+| DELETE | `/inventory/{sku}` | Remove item | 204 No Content / 404 |
+
+Validações Pydantic: `quantity >= 0`, `delta != 0` e resultado nunca negativo (`400 Bad Request`).
+
+### Documentação interativa (`/docs`)
+
+O FastAPI gera a documentação automaticamente a partir dos tipos e `response_model`:
+
+```powershell
+docker compose up -d --build            # sobe api + db + inventory
+curl.exe http://localhost:8001/health   # 200 (healthcheck do container)
+curl.exe http://localhost:8001/docs     # Swagger UI automatizado
+curl.exe http://localhost:8001/openapi.json   # spec OpenAPI do serviço
+```
+
+### Testar o estoque (PowerShell)
+
+```powershell
+Invoke-WebRequest -Uri http://localhost:8001/inventory -UseBasicParsing | Select-Object -ExpandProperty Content
+Invoke-WebRequest -Uri http://localhost:8001/inventory/NB-01 -UseBasicParsing | Select-Object -ExpandProperty Content
+$body = '{"name": "Teclado Mecanico", "quantity": 30}'
+Invoke-WebRequest -Uri http://localhost:8001/inventory/KB-01 -Method Put -ContentType "application/json" -Body $body -UseBasicParsing | Select-Object StatusCode
+Invoke-WebRequest -Uri http://localhost:8001/inventory/NB-01/adjust -Method Post -ContentType "application/json" -Body '{"delta": -5}' -UseBasicParsing | Select-Object -ExpandProperty Content
+```
+
+O serviço roda na porta `8001` e permanece na rede interna `synapseshop-net` (integrável à API principal nas próximas aulas).
+
+### Template de prompts da squad
+
+O arquivo `PROMPTS-TEMPLATE.md` padroniza como descrever requisitos, restrições e formatos de saída ao acionar ferramentas de IA — requisito da Aula 5. Todo prompt usado no projeto segue esse padrão e é registrado em `PROMPTS.md`.

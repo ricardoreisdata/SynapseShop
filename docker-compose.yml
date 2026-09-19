@@ -37,6 +37,14 @@ services:
     networks:
       - synapseshop-net
 
+  inventory:
+    build: ./inventory
+    container_name: synapseshop-inventory
+    ports:
+      - "8001:8001"
+    networks:
+      - synapseshop-net
+
 volumes:
   pgdata:
 
