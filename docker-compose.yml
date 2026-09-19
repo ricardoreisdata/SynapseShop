@@ -2,3 +2,30 @@ services:
   api:
     build: .
     container_name: synapseshop-api
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      APP_ENV: dev
+    depends_on:
+      - db
+    networks:
+      - synapseshop-net
+
+  db:
+    image: postgres:17-alpine
+    container_name: synapseshop-db
+    environment:
+      POSTGRES_USER: synapseshop
+      POSTGRES_PASSWORD: synapseshop
+      POSTGRES_DB: synapseshop
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - synapseshop-net
+
+volumes:
+  pgdata:
+
+networks:
+  synapseshop-net:

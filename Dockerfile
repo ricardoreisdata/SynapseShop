@@ -1,7 +1,25 @@
+FROM python:3.12.10-slim AS builder
+WORKDIR /build
+COPY api/requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
 FROM python:3.12.10-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY app.py .
+COPY --from=builder /install /usr/local
 
-CMD ["python", "app.py"]
+COPY api/main.py .
+
+RUN useradd --create-home appuser
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
+  CMD python -c "import httpx; httpx.get('http://127.0.0.1:8000/health', timeout=3).raise_for_status()"
+
+CMD ["python", "main.py"]
