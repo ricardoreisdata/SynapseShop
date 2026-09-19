@@ -38,13 +38,13 @@ O `--build` reconstrói a imagem quando o código muda (essencial no desenvolvim
 
 ```powershell
 docker compose ps                       # status e saúde (healthy) dos serviços
-curl.exe http://localhost:8000/health   # rota de disponibilidade da API
+curl.exe http://localhost:8000/health/  # rota de disponibilidade da API
 docker compose logs -f api              # logs da API em tempo real (Ctrl+C para sair)
 docker compose logs -f db               # logs do PostgreSQL
 docker stats                            # CPU/memória dos containers em tempo real
 ```
 
-Esperado em `docker compose ps`: `api` como `Up ... (healthy)` e `db` como `Up`. A rota `/health` responde `{"status": "ok", "service": "synapseshop-api"}`.
+Esperado em `docker compose ps`: `api` como `Up ... (healthy)` e `db` como `Up`. A rota `/health/` responde `{"status": "ok", "service": "synapseshop-api"}`.
 
 ### Derrubar o ambiente
 
@@ -57,4 +57,52 @@ docker compose down -v     # o -v apaga TAMBÉM os volumes (destrói os dados!) 
 
 - **Dados do banco:** ficam no volume `synapseshop_pgdata` (o compose prefixa o nome declarado `pgdata` com o nome do projeto), fora dos containers. `docker volume ls` e `docker volume inspect synapseshop_pgdata` para conferir.
 - **Acessar o banco** de dentro da rede: `docker compose exec db psql -U synapseshop -d synapseshop`.
-- **Imagem:** o `Dockerfile` usa *multistage build*, usuário não-root (`appuser`) e `HEALTHCHECK` apontando para `/health`. `docker history synapseshop-api:latest` para inspecionar as camadas.
+- **Imagem:** o `Dockerfile` usa *multistage build*, usuário não-root (`appuser`) e `HEALTHCHECK` apontando para `/health/`. `docker history synapseshop-api:latest` para inspecionar as camadas.
+
+## API principal — Django REST Framework (Aula 4)
+
+A API é um projeto Django que sobe no container `api`. O app `store` expõe as entidades base do catálogo (`Category` e `Item`) como recursos RESTful versionados sob `/api/v1/`. O código-fonte é sincronizado com o host via *bind mount* (`./api:/app`), então mudanças refletem com auto-reload.
+
+### Endpoints
+
+| Método | Rota | Descrição | Status esperado |
+|---|---|---|---|
+| GET | `/api/v1/categories/` | Lista categorias | 200 OK |
+| POST | `/api/v1/categories/` | Cria categoria | 201 Created |
+| GET | `/api/v1/categories/{id}/` | Detalha categoria | 200 OK / 404 |
+| PUT/PATCH | `/api/v1/categories/{id}/` | Atualiza categoria | 200 OK |
+| DELETE | `/api/v1/categories/{id}/` | Exclui categoria | 204 No Content |
+| GET | `/api/v1/items/` | Lista itens | 200 OK |
+| POST | `/api/v1/items/` | Cria item (valida preço > 0) | 201 Created / 400 |
+| GET | `/api/v1/items/{id}/` | Detalha item | 200 OK / 404 |
+| PUT/PATCH | `/api/v1/items/{id}/` | Atualiza item | 200 OK |
+| DELETE | `/api/v1/items/{id}/` | Exclui item | 204 No Content |
+
+### Primeira subida (banco vazio)
+
+```powershell
+docker compose up -d --build                 # sobe api + db (db aguarda ficar healthy)
+docker compose run --rm api python manage.py makemigrations store   # gera migrations (grava em ./api via bind mount)
+docker compose run --rm api python manage.py migrate                # aplica as migrations
+docker compose restart api                                          # o entrypoint também faz migrate automaticamente
+```
+
+O `entrypoint.sh` já executa `migrate --noinput` a cada start da API; o passo manual acima só é necessário na criação inicial das migrations.
+
+### Testar a API
+
+```powershell
+curl.exe http://localhost:8000/api/v1/categories/                                   # lista (ou cria via POST abaixo)
+curl.exe -X POST http://localhost:8000/api/v1/categories/ -H "Content-Type: application/json" -d "{\"name\": \"Eletronicos\"}"
+curl.exe -X POST http://localhost:8000/api/v1/items/ -H "Content-Type: application/json" -d "{\"name\": \"Notebook\", \"sku\": \"NB-01\", \"category\": 1, \"price\": \"4599.90\"}"
+```
+
+Payloads inválidos (ex.: preço `0`) retornam `400 Bad Request`; ids inexistentes retornam `404 Not Found`.
+
+### Coleção no Postman
+
+O arquivo `postman/SynapseShop.postman_collection.json` contém todos os CRUDs (`Categories`, `Items`) e o `/health/`, com a variável `baseUrl` = `http://localhost:8000`. Importe pelo Postman: **Import → arquivo JSON**. Os exemplos de `POST`/`PUT` já trazem os corpos esperados.
+
+### Interface administrativa (extra)
+
+O Django Admin fica em `http://localhost:8000/admin/` — útil para inspecionar os dados gerados via API (não faz parte do escopo de autenticação da Aula 4).

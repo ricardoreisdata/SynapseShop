@@ -5,10 +5,18 @@ services:
     ports:
       - "8000:8000"
     environment:
-      PORT: 8000
-      APP_ENV: dev
+      DJANGO_DEBUG: "1"
+      DJANGO_ALLOWED_HOSTS: "127.0.0.1,localhost,0.0.0.0"
+      DB_NAME: synapseshop
+      DB_USER: synapseshop
+      DB_PASSWORD: synapseshop
+      DB_HOST: db
+      DB_PORT: "5432"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    volumes:
+      - ./api:/app
     networks:
       - synapseshop-net
 
@@ -19,6 +27,11 @@ services:
       POSTGRES_USER: synapseshop
       POSTGRES_PASSWORD: synapseshop
       POSTGRES_DB: synapseshop
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapseshop -d synapseshop"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:

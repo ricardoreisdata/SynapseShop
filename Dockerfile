@@ -12,14 +12,16 @@ WORKDIR /app
 
 COPY --from=builder /install /usr/local
 
-COPY api/main.py .
+COPY api/ .
 
-RUN useradd --create-home appuser
+RUN useradd --create-home appuser \
+    && chmod +x entrypoint.sh
+
 USER appuser
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
-  CMD python -c "import httpx; httpx.get('http://127.0.0.1:8000/health', timeout=3).raise_for_status()"
+  CMD python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health/', timeout=3).read()"
 
-CMD ["python", "main.py"]
+CMD ["sh", "entrypoint.sh"]

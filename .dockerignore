@@ -3,7 +3,9 @@
 .env
 __pycache__/
 *.py[cod]
+*.sqlite3
 .opencode/
 specs/
+postman/
 README.md
 PROMPTS.md

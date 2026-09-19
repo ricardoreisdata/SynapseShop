@@ -1,0 +1,279 @@
+{
+  "info": {
+    "_postman_id": "synapseshop-aula4-c91f4b7a-2f3e-4a9d-b8c1-e5f0a2d3b4c5",
+    "name": "SynapseShop",
+    "description": "Colecao das rotas da API principal (Django REST Framework) - Aula 4. Use a variavel baseUrl para apontar para o ambiente desejado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health/",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"],
+              "trailing_slash": true
+            },
+            "description": "Verifica a disponibilidade da API (usada pelo HEALTHCHECK do container)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Listar categorias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"],
+              "trailing_slash": true
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar categoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Eletronicos\",\n  \"description\": \"Categorias de equipamentos eletronicos.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 201 Created."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhar categoria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 200 OK. Trocando o id por um inexistente, esperado: 404 Not Found."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar categoria (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Eletronicos\",\n  \"description\": \"Descricao atualizada.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 200 OK."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar parcialmente (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Atualizado via PATCH.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 200 OK."
+          },
+          "response": []
+        },
+        {
+          "name": "Excluir categoria",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 204 No Content. Categoria referenciada por itens retorna erro (PROTECT)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "Listar itens",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "items"],
+              "trailing_slash": true
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Notebook Ultra\",\n  \"sku\": \"NB-ULTRA-01\",\n  \"category\": 1,\n  \"price\": \"4599.90\",\n  \"stock\": 10,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "items"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 201 Created. Preco zero ou negativo deve retornar 400 Bad Request."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhar item",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "items", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 200 OK."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar item (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Notebook Ultra Pro\",\n  \"sku\": \"NB-ULTRA-01\",\n  \"category\": 1,\n  \"price\": \"5199.90\",\n  \"stock\": 8,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "items", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 200 OK."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar parcialmente (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "items", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 200 OK."
+          },
+          "response": []
+        },
+        {
+          "name": "Excluir item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/1/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "items", "1"],
+              "trailing_slash": true
+            },
+            "description": "Esperado: 204 No Content."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
