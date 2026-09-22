@@ -79,7 +79,7 @@ def main() -> None:
         if inspector.has_table("inventory"):
             cleanup = SessionLocal()
             try:
-                cleanup.execute(InventoryRecord.__table__.delete())
+                cleanup.execute(InventoryRecord.__table__.delete().where(InventoryRecord.sku.like("TEST-%")))
                 cleanup.commit()
             finally:
                 cleanup.close()
