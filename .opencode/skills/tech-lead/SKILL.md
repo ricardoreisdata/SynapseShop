@@ -1,5 +1,5 @@
 ---
-name: tech_lead
+name: tech-lead
 description: Use quando for necessário formar e conduzir o time técnico, definir o domínio específico do projeto (ex: loja, livraria), garantir a aderência aos requisitos técnicos e o entendimento unificado da arquitetura-alvo.
 ---
 

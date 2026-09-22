@@ -1,5 +1,5 @@
 ---
-name: product_owner
+name: product-owner
 description: Use quando for necessário definir e priorizar o domínio e os requisitos do produto, articulado com o Tech Lead, garantindo entregas de valor aderentes aos requisitos técnicos do MVP e ao entendimento unificado da arquitetura-alvo.
 ---
 

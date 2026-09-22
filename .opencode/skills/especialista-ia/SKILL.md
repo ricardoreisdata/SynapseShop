@@ -1,5 +1,5 @@
 ---
-name: especialista_ia
+name: especialista-ia
 description: Use quando for necessário planejar a documentação de IA do projeto (PROMPTS.md), definir o padrão de registro de prompts e mapear os pilares de IA do MVP (assistente, NL-to-SQL, RAG).
 ---
 
