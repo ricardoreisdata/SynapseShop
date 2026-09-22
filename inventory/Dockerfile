@@ -12,7 +12,10 @@ WORKDIR /app
 
 COPY --from=builder /install /usr/local
 
+COPY alembic.ini .
+COPY alembic/ ./alembic/
 COPY app/ ./app/
+COPY scripts/ ./scripts/
 
 RUN useradd --create-home appuser
 
@@ -23,4 +26,4 @@ EXPOSE 8001
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
   CMD python -c "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/health', timeout=3).read()"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8001"]

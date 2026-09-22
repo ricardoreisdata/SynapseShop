@@ -150,3 +150,66 @@ O serviço roda na porta `8001` e permanece na rede interna `synapseshop-net` (i
 ### Template de prompts da squad
 
 O arquivo `PROMPTS-TEMPLATE.md` padroniza como descrever requisitos, restrições e formatos de saída ao acionar ferramentas de IA — requisito da Aula 5. Todo prompt usado no projeto segue esse padrão e é registrado em `PROMPTS.md`.
+
+## Microsserviço de Estoque — Modelagem Relacional (Aula 6)
+
+Na Aula 6 o `inventory` ganhou **persistência relacional** no PostgreSQL, orquestrada por **SQLAlchemy** (ORM) e **Alembic** (migrações), substituindo o armazenamento em memória da Aula 5. As rotas da API foram preservadas; a camada interna agora segue o padrão **Repository → Service** transacional.
+
+### Modelagem: entidade `inventory`
+
+| Campo | Tipo | Regra de integridade |
+|---|---|---|
+| `id` | integer (PK, serial) | Chave primária |
+| `sku` | varchar(50) | `NOT NULL` + **`UNIQUE`** (índice) |
+| `name` | varchar(200) | `NOT NULL` |
+| `quantity` | integer | `NOT NULL` + **CHECK `quantity >= 0`** |
+| `created_at` | timestamptz | `NOT NULL`, default `now()` |
+| `updated_at` | timestamptz | `NOT NULL`, default `now()` |
+
+Índices: `inventory_pkey` (PK em `id`) e `ix_inventory_sku` (único em `sku`) — atendem à busca por SKU e garantem a unicidade da chave de negócio. O versionamento do schema fica na tabela `alembic_version`.
+
+### Migrações e rollback (Alembic)
+
+O `CMD` da imagem já executa `alembic upgrade head` antes de subir o `uvicorn`, então a migração é aplicada automaticamente a cada start (o `db` é aguardado via `depends_on: service_healthy`). Para operar o versionamento manualmente:
+
+```powershell
+docker compose run --rm inventory alembic upgrade head       # aplica migrações pendentes
+docker compose run --rm inventory alembic downgrade base     # rollback seguro (remove o schema)
+docker compose run --rm inventory alembic downgrade -1       # retrocede 1 revisão
+docker compose run --rm inventory alembic current            # revisão ativa no banco
+```
+
+O rollback é **transacional e seguro** (componentes `upgrade`/`downgrade` completos por revisão).
+
+### Arquitetura interna (Repository → Service)
+
+```
+inventory/app/db.py         conexão/engine (postgresql+psycopg) e SessionLocal
+inventory/app/entity.py     modelo ORM SQLAlchemy (InventoryRecord) + constraints
+inventory/app/repository.py repositório transacional (get/list/upsert/adjust/delete)
+inventory/app/service.py    serviço que consome o repositório (regras de negócio)
+inventory/app/main.py       FastAPI: sessão por request, rotas delegam ao service
+inventory/alembic/          config + migrações (revisão 2026092101 cria a tabela)
+```
+
+- **Transacional:** cada request abre uma `Session` (fechada ao final via dependency); `upsert` faz flush+commit com rollback em `IntegrityError`; `adjust` usa `SELECT ... FOR UPDATE` e aborta (rollback) se o estoque ficar negativo.
+- **Sessão por request:** dependency `get_service()` cria a sessão, injeta `InventoryRepository` no `InventoryService` e garante o fechamento no `finally`.
+
+### Testes transacionais e tempos
+
+O script `inventory/scripts/run_transactional_tests.py` exercita 9 operações (upsert, leitura, update, ajustes válidos/inválidos, unicidade de SKU, listagem e delete) e mede o tempo de cada uma:
+
+```powershell
+docker compose run --rm inventory python scripts/run_transactional_tests.py
+```
+
+Resultado de referência (2026-09-21): tempo médio por transação **~18 ms** (mais lenta: primeiro upsert, ~73 ms — warm-up/connection pool).
+
+### Comandos rápidos de validação
+
+```powershell
+curl.exe http://localhost:8001/health                          # 200
+curl.exe http://localhost:8001/inventory                       # lista (persistido)
+curl.exe -X PUT http://localhost:8001/inventory/GPU-01 -H "Content-Type: application/json" -d "{\"sku\": \"GPU-01\", \"name\": \"Placa de Video\", \"quantity\": 7}"
+curl.exe -X POST http://localhost:8001/inventory/NB-01/adjust -H "Content-Type: application/json" -d "{\"delta\": -5}"
+```

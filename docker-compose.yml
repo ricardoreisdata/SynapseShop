@@ -42,6 +42,15 @@ services:
     container_name: synapseshop-inventory
     ports:
       - "8001:8001"
+    environment:
+      DB_NAME: synapseshop
+      DB_USER: synapseshop
+      DB_PASSWORD: synapseshop
+      DB_HOST: db
+      DB_PORT: "5432"
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - synapseshop-net
 
